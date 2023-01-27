@@ -30,9 +30,9 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
-  late Future<Coin> futureCoin;
+  late Future<List<Coin>> futureCoin;
 
-  Future<Coin> fetchCoin() async {
+  Future<List<Coin>> fetchCoin() async {
     final response = await http.get(Uri.parse(
         'https://api.coinstats.app/public/v1/coins?skip=0&limit=5&currency=USD'));
 
@@ -41,7 +41,10 @@ class _MyHomePageState extends State<MyHomePage> {
       // then parse the JSON.
       final coins = jsonDecode(response.body);
 
-      return Coin.fromJson(coins['coins'][0]);
+      final coinList = coins['coins'];
+      print(coins['coins']);
+
+      return coinList.map<Coin>((coin) => Coin.fromJson(coin)).toList();
     } else {
       // If the server did not return a 200 OK response,
       // then throw an exception.
@@ -59,39 +62,39 @@ class _MyHomePageState extends State<MyHomePage> {
   Widget build(BuildContext context) {
     return Scaffold(
       body: SafeArea(
-        child: FutureBuilder<Coin>(
+        child: FutureBuilder<List<Coin>>(
           future: futureCoin,
           builder: (context, snapshot) {
             if (snapshot.hasData) {
-              print(snapshot.data);
-              print(snapshot.data!.icon);
-              print(snapshot.data!.name);
-              print(snapshot.data!.price);
-
-              return Row(
-                children: [
-                  Image.network(
-                    snapshot.data!.icon,
-                    width: 35,
-                    height: 35,
-                  ),
-                  const SizedBox(width: 10),
-                  Text(
-                    snapshot.data!.name,
-                    style: const TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  const SizedBox(width: 10),
-                  Text(
-                    '\$ ${snapshot.data!.price}',
-                    style: const TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ],
+              return ListView.builder(
+                itemBuilder: (context, index) {
+                  return Row(
+                    children: [
+                      Image.network(
+                        snapshot.data!.elementAt(index).icon,
+                        width: 35,
+                        height: 35,
+                      ),
+                      const SizedBox(width: 10),
+                      Text(
+                        snapshot.data!.elementAt(index).name,
+                        style: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      Text(
+                        '\$ ${snapshot.data!.elementAt(index).price}',
+                        style: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ],
+                  );
+                },
+                itemCount: snapshot.data!.length,
               );
             } else if (snapshot.hasError) {
               return Text('${snapshot.error}');
@@ -109,7 +112,7 @@ class _MyHomePageState extends State<MyHomePage> {
 class Coin {
   final String icon;
   final String name;
-  final double price;
+  final num price;
 
   const Coin({
     required this.icon,
